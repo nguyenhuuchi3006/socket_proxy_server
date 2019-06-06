@@ -11,21 +11,21 @@
 #define new DEBUG_NEW
 #endif
 
+char *get_ip(const char *host);
 
 // The one and only application object
 
 CWinApp theApp;
 
 using namespace std;
-//
-//string getIpByHostName(const char* host){//	struct hostent *hent;//	int iplen = 15; //XXX.XXX.XXX.XXX//	char *ip = new char(iplen + 1);//	memset(ip, 0, iplen + 1);//	if ((hent = gethostbyname(host)) == NULL){//		return "NULL";//	}//	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL){//		return "NULL";//	}//	return string(ip);//}
-//
-//wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
-//{
-//	wchar_t* wString = new wchar_t[4096];
-//	MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
-//	return wString;
-//}
+
+wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
+{
+	wchar_t* wString = new wchar_t[4096];
+	MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
+	return wString;
+}
+
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
@@ -76,6 +76,7 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			cout << "da ket noi" << endl;
 
 			// nhận request của client
+
 			int size = 100000;
 			char *tempRequest = new char[size + 1];
 			size = connectorClient.Receive(tempRequest, size, 0);
@@ -83,13 +84,31 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			string request = string(tempRequest,size);
 			cout << request << endl;
 
-			// lấy host của chuỗi request, http 1.1 luôn có host, còn http 1.0 thì cái có cái không, nên tách ra lấy ở dòng đầu
+			// lấy host của chuỗi request
 
-			// từ cái host đã có lấy ra ip của nó (có hàm ở trên rồi)
-			string ip = "";
+			string host;
+			int indexSearched = request.find("Host: ");
+			int indexEndHost;
+			if (indexSearched == -1){
+				indexEndHost = request.find("\ ");
+				host = request.substr(11, indexEndHost - 11);
+				cout << "La http 1.0" << endl;
+			}
+			else {
+				cout << "La http 1.1" << endl;
+				indexEndHost = request.find("\r\n", indexSearched);
+				host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
+				cout << host << endl;
+			}
+
+			// lấy ra ip của remote server
+
+			string ip = string(get_ip(host.c_str()));
+			cout << ip << endl;
 
 			// tạo socket kết nối với remote server
-			/*CSocket connectorRemoteServer;
+
+			CSocket connectorRemoteServer;
 			if (!connectorRemoteServer.Create()){
 				cout << "Not create this socket" << endl;
 				return FALSE;
@@ -99,9 +118,14 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				return FALSE;
 			}
 			cout << "Da ket noi duoc voi remote server nay" << endl;
-*/
-			// nhận respond của remote server
 
+			// gửi request giùm và nhận respond của remote server
+
+			int tmpRes = 0;			tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());			char bufReceive[10000];			string response = "";			if (tmpRes > 0){				while (tmpRes > 0){					tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);					response += string(bufReceive, tmpRes);				}			}			else{				cout << "Not send request!!!" << endl;				return 0;			}
+
+			//Gửi lại respond cho client
+
+			connectorClient.Send(response.c_str(), response.size());
 
 			Proxy.Close();
 			
@@ -117,4 +141,24 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 	}
 
 	return nRetCode;
+}
+
+
+char *get_ip(const char *host)
+{
+	struct hostent *hent;
+	int iplen = 15; //XXX.XXX.XXX.XXX
+	char *ip = (char *)malloc(iplen + 1);
+	memset(ip, 0, iplen + 1);
+	if ((hent = gethostbyname(host)) == NULL)
+	{
+		perror("Can't get IP");
+		exit(1);
+	}
+	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL)
+	{
+		perror("Can't resolve host");
+		exit(1);
+	}
+	return ip;
 }
