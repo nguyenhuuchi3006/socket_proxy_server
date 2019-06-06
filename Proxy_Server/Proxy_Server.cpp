@@ -5,6 +5,7 @@
 #include "Proxy_Server.h"
 #include "afxsock.h"
 #include "string"
+#include <iostream>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -16,15 +17,15 @@
 CWinApp theApp;
 
 using namespace std;
-
-string getIpByHostName(const char* host){	struct hostent *hent;	int iplen = 15; //XXX.XXX.XXX.XXX	char *ip = (char *)malloc(iplen + 1);	memset(ip, 0, iplen + 1);	if ((hent = gethostbyname(host)) == NULL){		return "NULL";	}	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL){		return "NULL";	}	return string(ip);}
-
-wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
-{
-	wchar_t* wString = new wchar_t[4096];
-	MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
-	return wString;
-}
+//
+//string getIpByHostName(const char* host){//	struct hostent *hent;//	int iplen = 15; //XXX.XXX.XXX.XXX//	char *ip = new char(iplen + 1);//	memset(ip, 0, iplen + 1);//	if ((hent = gethostbyname(host)) == NULL){//		return "NULL";//	}//	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL){//		return "NULL";//	}//	return string(ip);//}
+//
+//wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
+//{
+//	wchar_t* wString = new wchar_t[4096];
+//	MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
+//	return wString;
+//}
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
@@ -81,15 +82,14 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			tempRequest[size + 1] = '\0';
 			string request = string(tempRequest,size);
 			cout << request << endl;
-			cout << size << endl;
 
 			// lấy host của chuỗi request, http 1.1 luôn có host, còn http 1.0 thì cái có cái không, nên tách ra lấy ở dòng đầu
 
 			// từ cái host đã có lấy ra ip của nó (có hàm ở trên rồi)
-			string ip;
+			string ip = "";
 
 			// tạo socket kết nối với remote server
-			CSocket connectorRemoteServer;
+			/*CSocket connectorRemoteServer;
 			if (!connectorRemoteServer.Create()){
 				cout << "Not create this socket" << endl;
 				return FALSE;
@@ -99,7 +99,7 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				return FALSE;
 			}
 			cout << "Da ket noi duoc voi remote server nay" << endl;
-
+*/
 			// nhận respond của remote server
 
 
