@@ -13,7 +13,7 @@
 #endif
 
 char *get_ip(const char *host);
-bool checkBlackList(string request, char * nameFile);
+bool checkBlackList(string request, ifstream &blacklist);
 
 // The one and only application object
 
@@ -34,17 +34,20 @@ bool checkBlackList(string request, ifstream &blacklist){
 	// kiểm tra request có trùng trong mảng không
 	string s;
 	while (!blacklist.eof())
+	{
 		getline(blacklist, s);
-	
-	if (s.length()==request.length() ){	//trùng
-		for (int i = 0; i < s.length(); i++)
-		{
-			if (s[i] != request[i])			//ifstream file("blacklist.txt", ios_base::in);	t dùng mở file bằng c++ nên khi m gọi hàm thì làm như vậy nè
-			return false;					//checkBlackList(request,file);		
-		}									//checkBlackList.close();
-		return true;
+
+		if (s.length() == request.length()){	//trùng
+			for (int i = 0; i < s.length(); i++)
+			{
+				if (s[i] != request[i])			
+					return false;						
+			}									
+		}
+		else return false;
+		
 	}
-	return false;							
+	return true;
 }
 
 
@@ -121,13 +124,12 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
 				cout << host << endl;
 			}
-
-			if (checkBlackList(request, "backlist.txt")){
+			ifstream file("blacklist.txt", ios_base::in);
+			if (checkBlackList(request, file)){
 				connectorClient.Send("Trung trong blacklist",100,0);
-
-				Proxy.Close();
+					Proxy.Close();
 			}
-
+			file.close();
 
 			// lấy ra ip của remote server
 
