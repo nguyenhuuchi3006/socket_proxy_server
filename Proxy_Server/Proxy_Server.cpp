@@ -33,22 +33,27 @@ bool checkBlackList(string request, ifstream &blacklist){
 	// đọc file tên nameFile vào mảng
 	// kiểm tra request có trùng trong mảng không
 	string s;
+	bool check = true;
 	while (!blacklist.eof())
 	{
 		getline(blacklist, s);
-		cout <<"lay tu file: "<< s << endl;
+
 		if (s.length() == request.length()){	//trùng
 			for (int i = 0; i < s.length(); i++)
 			{
-				if (s[i] != request[i])			
-					return false;						
-			}									
+				if (s[i] != request[i])
+					check = false;
+			}
+			if (check == true)
+				return true;
 		}
-		else return false;
-		
+		check = true;
+
 	}
-	return true;
+	return false;
 }
+
+string ResForbidden = "HTTP/1.0 403 Forbidden\r\n\Cache-Control: no-cache\r\n\Connection: close\r\n";
 
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
@@ -125,13 +130,12 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				cout << host << endl;
 			}
 			ifstream file("blacklist.txt", ios_base::in);
-			if (checkBlackList(request, file)){
-				connectorClient.Send("Trung trong blacklist",100,0);
+			if (checkBlackList(host, file)){
+				connectorClient.Send(ResForbidden.c_str(), ResForbidden.size(), 0);
 				cout << "Trung blacklist" << endl;
 				Proxy.Close();
 			}
 			file.close();
-
 			cout << "Khong trung blacklist" << endl;
 			// lấy ra ip của remote server
 
