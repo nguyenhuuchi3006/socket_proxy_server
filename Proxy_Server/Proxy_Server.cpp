@@ -12,6 +12,7 @@
 #endif
 
 char *get_ip(const char *host);
+bool checkBlackList(string request, char * nameFile);
 
 // The one and only application object
 
@@ -24,6 +25,16 @@ wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
 	wchar_t* wString = new wchar_t[4096];
 	MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
 	return wString;
+}
+
+// hàm kiểm tra blacklist
+bool checkBlackList(string request, char * nameFile){
+	// đọc file tên nameFile vào mảng
+	// kiểm tra request có trùng trong mảng không
+	if (true){	//trùng
+		return true;	
+	}
+	return false;
 }
 
 
@@ -101,6 +112,13 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				cout << host << endl;
 			}
 
+			if (checkBlackList(request, "backlist.txt")){
+				connectorClient.Send("Trung trong blacklist",100,0);
+
+				Proxy.Close();
+			}
+
+
 			// lấy ra ip của remote server
 
 			string ip = string(get_ip(host.c_str()));
@@ -121,7 +139,20 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 
 			// gửi request giùm và nhận respond của remote server
 
-			int tmpRes = 0;			tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());			char bufReceive[10000];			string response = "";			if (tmpRes > 0){				while (tmpRes > 0){					tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);					response += string(bufReceive, tmpRes);				}			}			else{				cout << "Not send request!!!" << endl;				return 0;			}
+			int tmpRes = 0;
+			tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());
+			char bufReceive[10000];
+			string response = "";
+			if (tmpRes > 0){
+				while (tmpRes > 0){
+					tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);
+					response += string(bufReceive, tmpRes);
+				}
+			}
+			else{
+				cout << "Not send request!!!" << endl;
+				return 0;
+			}
 
 			//Gửi lại respond cho client
 
