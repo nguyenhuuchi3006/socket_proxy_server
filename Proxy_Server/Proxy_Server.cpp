@@ -6,13 +6,14 @@
 #include "afxsock.h"
 #include "string"
 #include <iostream>
+#include <fstream>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
 char *get_ip(const char *host);
-bool checkBlackList(string request, char * nameFile);
+//bool checkBlackList(string request, ifstream &blacklist);
 
 // The one and only application object
 
@@ -28,13 +29,25 @@ wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
 }
 
 // hàm kiểm tra blacklist
-bool checkBlackList(string request, char * nameFile){
+bool checkBlackList(string request, ifstream &blacklist){
 	// đọc file tên nameFile vào mảng
 	// kiểm tra request có trùng trong mảng không
-	if (true){	//trùng
-		return true;	
+	string s;
+	while (!blacklist.eof())
+	{
+		getline(blacklist, s);
+		cout <<"lay tu file: "<< s << endl;
+		if (s.length() == request.length()){	//trùng
+			for (int i = 0; i < s.length(); i++)
+			{
+				if (s[i] != request[i])			
+					return false;						
+			}									
+		}
+		else return false;
+		
 	}
-	return false;
+	return true;
 }
 
 
@@ -111,14 +124,15 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
 				cout << host << endl;
 			}
-
-			if (checkBlackList(request, "backlist.txt")){
+			ifstream file("blacklist.txt", ios_base::in);
+			if (checkBlackList(request, file)){
 				connectorClient.Send("Trung trong blacklist",100,0);
-
+				cout << "Trung blacklist" << endl;
 				Proxy.Close();
 			}
+			file.close();
 
-
+			cout << "Khong trung blacklist" << endl;
 			// lấy ra ip của remote server
 
 			string ip = string(get_ip(host.c_str()));
