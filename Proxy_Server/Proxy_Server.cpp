@@ -6,6 +6,7 @@
 #include "afxsock.h"
 #include "string"
 #include <iostream>
+#include <fstream>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -28,13 +29,22 @@ wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
 }
 
 // hàm kiểm tra blacklist
-bool checkBlackList(string request, char * nameFile){
+bool checkBlackList(string request, ifstream &blacklist){
 	// đọc file tên nameFile vào mảng
 	// kiểm tra request có trùng trong mảng không
-	if (true){	//trùng
-		return true;	
+	string s;
+	while (!blacklist.eof())
+		getline(blacklist, s);
+	
+	if (s.length()==request.length() ){	//trùng
+		for (int i = 0; i < s.length(); i++)
+		{
+			if (s[i] != request[i])			//ifstream file("blacklist.txt", ios_base::in);	t dùng mở file bằng c++ nên khi m gọi hàm thì làm như vậy nè
+			return false;					//checkBlackList(request,file);		
+		}									//checkBlackList.close();
+		return true;
 	}
-	return false;
+	return false;							
 }
 
 
