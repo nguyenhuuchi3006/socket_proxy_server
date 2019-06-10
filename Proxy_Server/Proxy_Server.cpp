@@ -131,7 +131,9 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			}
 			ifstream file("blacklist.txt", ios_base::in);
 			if (checkBlackList(host, file)){
+
 				connectorClient.Send(ResForbidden.c_str(), ResForbidden.size(), 0);
+
 				cout << "Trung blacklist" << endl;
 				Proxy.Close();
 			}
