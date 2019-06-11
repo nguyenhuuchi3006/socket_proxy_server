@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "Proxy_Server.h"
 #include "afxsock.h"
-#include "string"
+#include <string>
 #include <iostream>
 #include <fstream>
 
@@ -14,7 +14,7 @@
 
 char *get_ip(const char *host);
 //bool checkBlackList(string request, ifstream &blacklist);
-
+//bool comparerTwoString(string string1, string string2);
 // The one and only application object
 
 CWinApp theApp;
@@ -52,6 +52,91 @@ bool checkBlackList(string request, ifstream &blacklist){
 	}
 	return false;
 }
+
+
+//so sánh hai chuỗi
+bool comparerTwoString(string string1, string string2)
+{
+	int count = 0;
+	int longStr1 = 0;
+	int longStr2 = 0;
+	while (string1[count] != '\0')
+		count++;
+	longStr1 = count;
+	while (string2[count] != '\0')
+		count++;
+	longStr2 = count;
+	count = 0;
+	if (longStr1 != longStr2)
+		return false;
+	else
+	while (string1[count] != '\0')
+	{
+		if (string1[count] != string2[count])
+			count++;
+		return false;
+	}
+	return true;
+}
+
+
+// mở file để lấy nội dung tương ứng với file request mà clent gửi
+string openCacheFile(string request)
+{
+	string data;
+	ifstream infile;
+	char string[1000];
+	int count = 0;
+	while (request[count] != '\0')
+		string[count] = request[count];
+	cout << "String trong file www.fit.txt" << string << endl;
+	strcat_s(string, ".txt");
+	infile.open(string);
+	infile >> data;
+	return data;
+}
+
+// kiểm tra request đã tồn tại hay chưa, chưa trả về char 0, đã tồn tại thì đọc tập tin tương ứng 
+string cache(string request)
+{
+	ifstream cacheFile("request.txt");
+	if (cacheFile.fail())
+	{
+		cout << "loi mo file";
+		return "0";
+	}
+	else
+	{
+		string line;
+		string data;
+		int i = 0;
+		char a[255];
+		while (!cacheFile.eof()) {
+			{
+				char temp[255];
+				cacheFile.getline(temp, 255);
+				std::string line = temp;
+				//bool check = comparerTwoString(line, request);
+				cout << "String ten file: " << line << endl;
+				cout << "String request: " << request << endl;
+				//cout << "So sanh 2 chuoi: " << check << endl;
+				if (line == request){
+					cout << "YES\n";
+					data = openCacheFile(request);
+					return data;
+				}
+				/*if (check == true)
+				{
+					data = openCacheFile(request);
+					return data;
+				}*/
+			}
+		};
+		return "0";
+	}
+}
+
+
 
 string ResForbidden = "HTTP/1.0 403 Forbidden\r\n\Cache-Control: no-cache\r\n\Connection: close\r\n";
 
@@ -129,6 +214,7 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
 				cout << host << endl;
 			}
+			// check blacklist
 			ifstream file("blacklist.txt", ios_base::in);
 			if (checkBlackList(host, file)){
 
@@ -136,9 +222,27 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 
 				cout << "Trung blacklist" << endl;
 				Proxy.Close();
+				return FALSE;
 			}
 			file.close();
 			cout << "Khong trung blacklist" << endl;
+			// xong blacklist
+
+			// cache
+			
+			string dataReturn = cache(host);
+			if (dataReturn == "0"){
+			//tạo mới vì request chưa tồn tại
+				cout << "chua truy cap trang web nay" << endl;
+				
+			}
+			else{
+				cout << "da truy cap trang web nay \n";
+				
+			}
+			cout << dataReturn << endl;
+				
+
 			// lấy ra ip của remote server
 
 			string ip = string(get_ip(host.c_str()));
