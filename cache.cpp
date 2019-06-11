@@ -3,12 +3,15 @@ int main()
 {
 	// cái mô phỏng cách dùng
 
-	string data = "3eiwjeorwiiorw";
-	string request = "adk";
-	string dataReturn = cache(request); //lấy dữ liệu trong file 
+	string data;
+	data = openCacheFile("home");
+	cout << data;
+	string request = "www.adkdsdd";
+	string dataReturn = cache(request); //lấy dữ liệu trong file
 	if (dataReturn == "0")
 		//tạo mới vì request chưa tồn tại
 		createNewCacheFile(data, request);
+	string data2 = openCacheFile(request);
 	return 0;
 }
 bool comparerTwoString(string string1, string string2)//so sánh hai chuỗi
@@ -19,6 +22,7 @@ bool comparerTwoString(string string1, string string2)//so sánh hai chuỗi
 	while (string1[count] != '\0')
 		count++;
 	longStr1 = count;
+	count = 0;
 	while (string2[count] != '\0')
 		count++;
 	longStr2 = count;
@@ -29,8 +33,8 @@ bool comparerTwoString(string string1, string string2)//so sánh hai chuỗi
 		while (string1[count] != '\0')
 		{
 			if (string1[count] != string2[count])
-				count++;
 				return false;
+			count++;
 		}
 	return true;
 }
@@ -41,15 +45,26 @@ string openCacheFile(string request)// mở file để lấy nội dung tương 
 	char string[1000];
 	int count = 0;
 	while (request[count] != '\0')
+	{
 		string[count] = request[count];
-	strcat_s(string, ".txt");
+		count++;
+	}
+	string[count + 0] = '.';
+	string[count + 1] = 't';
+	string[count + 2] = 'x';
+	string[count + 3] = 't';
+	string[count + 4] = '\0';
 	infile.open(string);
-	infile >> data;
+	for (istreambuf_iterator<char, char_traits<char> > it(infile.rdbuf());
+		it != istreambuf_iterator<char, char_traits<char> >(); it++) {
+
+		data += *it; //append at end of string
+	}
 	return data;
 }
 void createNewCacheFile(string data, string newRequest)//cái request mà không tồn tại thì thêm vào file request và tạo file tương ứng lưu data phản hồi
 {
-	//lưu data request
+	//lưu data vao request
 	ofstream outfile;
 	char string[1000];
 	int count = 0;
@@ -58,11 +73,11 @@ void createNewCacheFile(string data, string newRequest)//cái request mà không
 		string[count] = newRequest[count];
 		count++;
 	}
-	string[count + 1] = '.';
-	string[count + 2] = 't';
-	string[count + 3] = 'x';
-	string[count + 4] = 't';
-	string[count + 5] = '\0';
+	string[count + 0] = '.';
+	string[count + 1] = 't';
+	string[count + 2] = 'x';
+	string[count + 3] = 't';
+	string[count + 4] = '\0';
 	outfile.open(string);
 	outfile << data << endl;
 	outfile.close();
