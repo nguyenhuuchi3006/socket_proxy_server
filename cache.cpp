@@ -64,6 +64,13 @@ string openCacheFile(string request)// mở file để lấy nội dung tương 
 }
 void createNewCacheFile(string data, string newRequest)//cái request mà không tồn tại thì thêm vào file request và tạo file tương ứng lưu data phản hồi
 {
+	std::wofstream fs;
+	fs.open(filepath, std::ios::out | std::ios::app);
+
+	std::locale utf8_locale(std::locale(), new utf8cvt<false>);
+	fs.imbue(utf8_locale);
+
+	fs << .. // Write anything you want...
 	//lưu data vao request
 	ofstream outfile;
 	char string[1000];

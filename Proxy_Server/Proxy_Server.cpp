@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -109,6 +110,7 @@ string openCacheFile(string request)// mở file để lấy nội dung tương 
 
 void createNewCacheFile(string data, string newRequest)//cái request mà không tồn tại thì thêm vào file request và tạo file tương ứng lưu data phản hồi
 {
+	
 	//lưu data vao request
 	ofstream outfile;
 	char string[1000];
@@ -319,6 +321,7 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			//Gửi lại respond cho client
 			// Trước khi gửi thì lưu nó vào cache
 			createNewCacheFile(response, host);
+			//cout << "Respond ne: " << response << endl;
 
 			connectorClient.Send(response.c_str(), response.size());
 
