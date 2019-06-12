@@ -1,0 +1,14 @@
+HTTP/1.1 301 Moved Permanently
+Date: Wed, 12 Jun 2019 09:25:11 GMT
+Server: Apache
+vary: X-Forwarded-Protocol
+cache-control: no-cache, no-store, must-revalidate
+Upgrade: h2,h2c
+Connection: Upgrade
+location: https://www.iczn.org/
+Transfer-Encoding: chunked
+Content-Type: text/html; charset=utf-8
+
+0
+
+

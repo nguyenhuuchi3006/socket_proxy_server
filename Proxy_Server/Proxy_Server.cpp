@@ -14,14 +14,17 @@
 #endif
 
 bool get_ip(const char *host, char *ip, int iplen);
-//bool checkBlackList(string request, ifstream &blacklist);
-//bool comparerTwoString(string string1, string string2);
+
 // The one and only application object
 
 CWinApp theApp;
 
 using namespace std;
 
+// biến toàn cục để trả về client khi vào trang blacklist
+string ResForbidden = "HTTP/1.0 403 Forbidden\r\n\Cache-Control: no-cache\r\n\Connection: close\r\n";
+
+// hàm chuyển char* sang wchar_t
 wchar_t *convertCharArrayToLPCWSTR(const char* charArray)
 {
 	wchar_t* wString = new wchar_t[4096];
@@ -56,7 +59,7 @@ bool checkBlackList(string request, ifstream &blacklist){
 
 
 //so sánh hai chuỗi
-bool comparerTwoString(string string1, string string2)//so sánh hai chuỗi
+bool comparerTwoString(string string1, string string2)
 {
 	int count = 0;
 	int longStr1 = 0;
@@ -83,7 +86,7 @@ bool comparerTwoString(string string1, string string2)//so sánh hai chuỗi
 
 
 // mở file để lấy nội dung tương ứng với file request mà clent gửi
-string openCacheFile(string request)// mở file để lấy nội dung tương ứng với file request mà clent gửi
+string openCacheFile(string request)
 {
 	string data;
 	ifstream infile;
@@ -103,15 +106,15 @@ string openCacheFile(string request)// mở file để lấy nội dung tương 
 	for (istreambuf_iterator<char, char_traits<char> > it(infile.rdbuf());
 		it != istreambuf_iterator<char, char_traits<char> >(); it++) {
 
-		data += *it; //append at end of string
+		data += *it; 
 	}
 	return data;
 }
 
-void createNewCacheFile(string data, string newRequest)//cái request mà không tồn tại thì thêm vào file request và tạo file tương ứng lưu data phản hồi
+//cái request mà không tồn tại thì thêm vào file request và tạo file tương ứng lưu data phản hồi
+void createNewCacheFile(string data, string newRequest)
 {
 	
-	//lưu data vao request
 	ofstream outfile;
 	char string[1000];
 	int count = 0;
@@ -129,7 +132,7 @@ void createNewCacheFile(string data, string newRequest)//cái request mà không
 	outfile.open(string);
 	outfile << data << endl;
 	outfile.close();
-	//them du luu vao file luu request
+	
 	fstream insertNewRequest("request.txt", ios::app);
 	insertNewRequest << newRequest << endl;
 	insertNewRequest.close();
@@ -159,11 +162,7 @@ string cache(string request)
 				cout << "String ten file: " << line << endl;
 				cout << "String request: " << request << endl;
 				cout << "So sanh 2 chuoi: " << check << endl;
-				/*if (line == request){
-					cout << "YES\n";
-					data = openCacheFile(request);
-					return data;
-				}*/
+				
 				if (check == true)
 				{
 					data = openCacheFile(request);
@@ -175,7 +174,7 @@ string cache(string request)
 	}
 }
 
-string ResForbidden = "HTTP/1.0 403 Forbidden\r\n\Cache-Control: no-cache\r\n\Connection: close\r\n";
+
 
 DWORD WINAPI handleThread(LPVOID param) {
 	SOCKET *socketClient = (SOCKET*)param;
@@ -210,6 +209,7 @@ DWORD WINAPI handleThread(LPVOID param) {
 		host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
 		cout << host << endl;
 	}
+
 	// check blacklist
 	ifstream file("blacklist.txt", ios_base::in);
 	if (checkBlackList(host, file)) {
@@ -221,7 +221,6 @@ DWORD WINAPI handleThread(LPVOID param) {
 	}
 	file.close();
 	cout << "Khong trung blacklist" << endl;
-	// xong blacklist
 
 	// cache
 
@@ -234,8 +233,6 @@ DWORD WINAPI handleThread(LPVOID param) {
 	}
 	cout << "chua truy cap trang web nay" << endl;
 	cout << dataReturn << endl;
-
-
 
 
 	// lấy ra ip của remote server
@@ -285,6 +282,7 @@ DWORD WINAPI handleThread(LPVOID param) {
 	connectorClient.Send(response.c_str(), response.size());
 	return 0;
 }
+
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
@@ -344,65 +342,8 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 				cout << "New thread created with id: " << threadID << endl;
 			}
 			
-<<<<<<< HEAD
-			string dataReturn = cache(host);
-			if (dataReturn != "0"){
-				cout << dataReturn << endl;
-				cout << "da truy cap trang web nay \n";
-				connectorClient.Send(dataReturn.c_str(), dataReturn.size(), 0);
-				Proxy.Close();
-				return FALSE;
-			}
-			cout << "chua truy cap trang web nay" << endl;
-			cout << dataReturn << endl;
 
-			
-			
 
-			// lấy ra ip của remote server
-
-			string ip = string(get_ip(host.c_str()));
-			cout << ip << endl;
-
-			// tạo socket kết nối với remote server
-
-			CSocket connectorRemoteServer;
-			if (!connectorRemoteServer.Create()){
-				cout << "Not create this socket" << endl;
-				return FALSE;
-			}
-			if (!connectorRemoteServer.Connect(convertCharArrayToLPCWSTR(ip.c_str()), 80)){
-				cout << "Not connect this remote server" << endl;
-				return FALSE;
-			}
-			cout << "Da ket noi duoc voi remote server nay" << endl;
-
-			// gửi request giùm và nhận respond của remote server
-
-			int tmpRes = 0;
-			tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());
-			char bufReceive[10000];
-			string response = "";
-			if (tmpRes > 0){
-				while (tmpRes > 0){
-					tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);
-					response += string(bufReceive, tmpRes);
-				}
-			}
-			else{
-				cout << "Not send request!!!" << endl;
-				return 0;
-			}
-
-			//Gửi lại respond cho client
-			// Trước khi gửi thì lưu nó vào cache
-			createNewCacheFile(response, host);
-			//cout << "Respond ne: " << response << endl;
-
-			connectorClient.Send(response.c_str(), response.size());
-
-=======
->>>>>>> 0770cb0411a172aca680e147a166a0d7fe469255
 			Proxy.Close();
 
 			// TODO: code your application's behavior above.
