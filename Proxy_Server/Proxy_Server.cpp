@@ -12,7 +12,7 @@
 #define new DEBUG_NEW
 #endif
 
-char *get_ip(const char *host);
+bool get_ip(const char *host, char *ip, int iplen);
 //bool checkBlackList(string request, ifstream &blacklist);
 //bool comparerTwoString(string string1, string string2);
 // The one and only application object
@@ -173,10 +173,116 @@ string cache(string request)
 	}
 }
 
-
-
 string ResForbidden = "HTTP/1.0 403 Forbidden\r\n\Cache-Control: no-cache\r\n\Connection: close\r\n";
 
+DWORD WINAPI handleThread(LPVOID param) {
+	SOCKET *socketClient = (SOCKET*)param;
+	CSocket connectorClient;
+	connectorClient.Attach(*socketClient);
+
+	// nhận request của client
+
+	int size = 100000;
+	char *tempRequest = new char[size + 1];
+	size = connectorClient.Receive(tempRequest, size, 0);
+
+	if (size <= 0) return -1;
+
+	tempRequest[size + 1] = '\0';
+	string request = string(tempRequest, size);
+	cout << request << endl;
+
+	// lấy host của chuỗi request
+
+	string host;
+	int indexSearched = request.find("Host: ");
+	int indexEndHost;
+	if (indexSearched == -1) {
+		indexEndHost = request.find("\ ");
+		host = request.substr(11, indexEndHost - 11);
+		cout << "La http 1.0" << endl;
+	}
+	else {
+		cout << "La http 1.1" << endl;
+		indexEndHost = request.find("\r\n", indexSearched);
+		host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
+		cout << host << endl;
+	}
+	// check blacklist
+	ifstream file("blacklist.txt", ios_base::in);
+	if (checkBlackList(host, file)) {
+
+		connectorClient.Send(ResForbidden.c_str(), ResForbidden.size(), 0);
+
+		cout << "Trung blacklist" << endl;
+		return FALSE;
+	}
+	file.close();
+	cout << "Khong trung blacklist" << endl;
+	// xong blacklist
+
+	// cache
+
+	string dataReturn = cache(host);
+	if (dataReturn != "0") {
+		cout << dataReturn << endl;
+		cout << "da truy cap trang web nay \n";
+		connectorClient.Send(dataReturn.c_str(), dataReturn.size(), 0);
+		return FALSE;
+	}
+	cout << "chua truy cap trang web nay" << endl;
+	cout << dataReturn << endl;
+
+
+
+
+	// lấy ra ip của remote server
+	int iplen = 15; //XXX.XXX.XXX.XXX
+	char *ip = (char *)malloc(iplen + 1);
+	memset(ip, 0, iplen + 1);
+
+	if (!get_ip(host.c_str(), ip, iplen)) {
+		return -1;
+	}
+	cout << "IP: " <<string(ip, ip + iplen) << endl;
+
+	// tạo socket kết nối với remote server
+
+	CSocket connectorRemoteServer;
+	if (!connectorRemoteServer.Create()) {
+		cout << "Not create this socket" << endl;
+		return FALSE;
+	}
+	if (!connectorRemoteServer.Connect(convertCharArrayToLPCWSTR(ip), 80)) {
+		cout << "Not connect this remote server" << endl;
+		return FALSE;
+	}
+	cout << "Da ket noi duoc voi remote server nay" << endl;
+
+	// gửi request giùm và nhận respond của remote server
+
+	int tmpRes = 0;
+	tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());
+	char bufReceive[10000];
+	string response = "";
+	if (tmpRes > 0) {
+		while (tmpRes > 0) {
+			tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);
+			response += string(bufReceive, tmpRes);
+		}
+	}
+	else {
+		cout << "Not send request!!!" << endl;
+		return 0;
+	}
+
+	//Gửi lại respond cho client
+	// Trước khi gửi thì lưu nó vào cache
+	createNewCacheFile(response, host);
+
+	connectorClient.Send(response.c_str(), response.size());
+	return 0;
+}
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
@@ -220,110 +326,23 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 			cout << "Dang cho ket noi" << endl;
 
 			CSocket connectorClient;
-			if (!Proxy.Accept(connectorClient)){
-				cout << "Not accept this client" << endl;
-				return FALSE;
-			}
-			cout << "da ket noi" << endl;
+			HANDLE threadStatus;
+			DWORD threadID;
 
-			// nhận request của client
-
-			int size = 100000;
-			char *tempRequest = new char[size + 1];
-			size = connectorClient.Receive(tempRequest, size, 0);
-			tempRequest[size + 1] = '\0';
-			string request = string(tempRequest,size);
-			cout << request << endl;
-
-			// lấy host của chuỗi request
-
-			string host;
-			int indexSearched = request.find("Host: ");
-			int indexEndHost;
-			if (indexSearched == -1){
-				indexEndHost = request.find("\ ");
-				host = request.substr(11, indexEndHost - 11);
-				cout << "La http 1.0" << endl;
-			}
-			else {
-				cout << "La http 1.1" << endl;
-				indexEndHost = request.find("\r\n", indexSearched);
-				host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
-				cout << host << endl;
-			}
-			// check blacklist
-			ifstream file("blacklist.txt", ios_base::in);
-			if (checkBlackList(host, file)){
-
-				connectorClient.Send(ResForbidden.c_str(), ResForbidden.size(), 0);
-
-				cout << "Trung blacklist" << endl;
-				Proxy.Close();
-				return FALSE;
-			}
-			file.close();
-			cout << "Khong trung blacklist" << endl;
-			// xong blacklist
-
-			// cache
-			
-			string dataReturn = cache(host);
-			if (dataReturn != "0"){
-				cout << dataReturn << endl;
-				cout << "da truy cap trang web nay \n";
-				connectorClient.Send(dataReturn.c_str(), dataReturn.size(), 0);
-				Proxy.Close();
-				return FALSE;
-			}
-			cout << "chua truy cap trang web nay" << endl;
-			cout << dataReturn << endl;
-
-			
-			
-
-			// lấy ra ip của remote server
-
-			string ip = string(get_ip(host.c_str()));
-			cout << ip << endl;
-
-			// tạo socket kết nối với remote server
-
-			CSocket connectorRemoteServer;
-			if (!connectorRemoteServer.Create()){
-				cout << "Not create this socket" << endl;
-				return FALSE;
-			}
-			if (!connectorRemoteServer.Connect(convertCharArrayToLPCWSTR(ip.c_str()), 80)){
-				cout << "Not connect this remote server" << endl;
-				return FALSE;
-			}
-			cout << "Da ket noi duoc voi remote server nay" << endl;
-
-			// gửi request giùm và nhận respond của remote server
-
-			int tmpRes = 0;
-			tmpRes = connectorRemoteServer.Send(request.c_str(), request.size());
-			char bufReceive[10000];
-			string response = "";
-			if (tmpRes > 0){
-				while (tmpRes > 0){
-					tmpRes = connectorRemoteServer.Receive(bufReceive, 10000, 0);
-					response += string(bufReceive, tmpRes);
+			while (true) {
+				if (!Proxy.Accept(connectorClient)) {
+					cout << "Not accept this client" << endl;
+					return FALSE;
 				}
+				cout << "da ket noi" << endl;
+
+				SOCKET *pSocketClient = new SOCKET();
+				*pSocketClient = connectorClient.Detach();
+				threadStatus = CreateThread(NULL, 0, handleThread, pSocketClient, 0, &threadID);
+				cout << "New thread created with id: " << threadID << endl;
 			}
-			else{
-				cout << "Not send request!!!" << endl;
-				return 0;
-			}
-
-			//Gửi lại respond cho client
-			// Trước khi gửi thì lưu nó vào cache
-			createNewCacheFile(response, host);
-
-			connectorClient.Send(response.c_str(), response.size());
-
-			Proxy.Close();
 			
+			Proxy.Close();
 
 			// TODO: code your application's behavior above.
 		}
@@ -339,21 +358,19 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 }
 
 
-char *get_ip(const char *host)
+bool get_ip(const char *host, char* ip, int iplen)
 {
 	struct hostent *hent;
-	int iplen = 15; //XXX.XXX.XXX.XXX
-	char *ip = (char *)malloc(iplen + 1);
-	memset(ip, 0, iplen + 1);
 	if ((hent = gethostbyname(host)) == NULL)
 	{
 		perror("Can't get IP");
-		exit(1);
+		return false;
 	}
 	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL)
 	{
 		perror("Can't resolve host");
-		exit(1);
+		return false;
 	}
-	return ip;
+
+	return true;
 }
