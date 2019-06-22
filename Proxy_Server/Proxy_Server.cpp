@@ -159,9 +159,6 @@ string cache(string request)
 				cacheFile.getline(temp, 255);
 				std::string line = temp;
 				bool check = comparerTwoString(line, request);
-				cout << "String ten file: " << line << endl;
-				cout << "String request: " << request << endl;
-				cout << "So sanh 2 chuoi: " << check << endl;
 				
 				if (check == true)
 				{
@@ -191,7 +188,7 @@ DWORD WINAPI handleThread(LPVOID param) {
 
 	tempRequest[size + 1] = '\0';
 	string request = string(tempRequest, size);
-	cout << request << endl;
+	cout << "Dia chi host: " << request << endl;
 
 	// lấy host của chuỗi request
 
@@ -201,10 +198,10 @@ DWORD WINAPI handleThread(LPVOID param) {
 	if (indexSearched == -1) {
 		indexEndHost = request.find("\ ");
 		host = request.substr(11, indexEndHost - 11);
-		cout << "La http 1.0" << endl;
+		cout << "Phien ban HTTP: HTTP 1.0" << endl;
 	}
 	else {
-		cout << "La http 1.1" << endl;
+		cout << "Phien ban HTTP: HTTP 1.1" << endl;
 		indexEndHost = request.find("\r\n", indexSearched);
 		host = request.substr(indexSearched + 6, indexEndHost - indexSearched - 6);
 		cout << host << endl;
@@ -216,23 +213,21 @@ DWORD WINAPI handleThread(LPVOID param) {
 
 		connectorClient.Send(ResForbidden.c_str(), ResForbidden.size(), 0);
 
-		cout << "Trung blacklist" << endl;
+		cout << "Kiem tra blacklist: co" << endl;
 		return FALSE;
 	}
 	file.close();
-	cout << "Khong trung blacklist" << endl;
+	cout << "Kiem tra blacklist: khong" << endl;
 
 	// cache
 
 	string dataReturn = cache(host);
 	if (dataReturn != "0") {
-		cout << dataReturn << endl;
-		cout << "da truy cap trang web nay \n";
+		cout << "Kiem tra cache: da truy cap\n";
 		connectorClient.Send(dataReturn.c_str(), dataReturn.size(), 0);
 		return FALSE;
 	}
-	cout << "chua truy cap trang web nay" << endl;
-	cout << dataReturn << endl;
+	cout << "Kiem tra cache: chua truy cap" << endl;
 
 
 	// lấy ra ip của remote server
@@ -243,7 +238,7 @@ DWORD WINAPI handleThread(LPVOID param) {
 	if (!get_ip(host.c_str(), ip, iplen)) {
 		return -1;
 	}
-	cout << "IP: " <<string(ip, ip + iplen) << endl;
+	cout << "IP cua remote server: " << string(ip, ip + iplen) << endl;
 
 	// tạo socket kết nối với remote server
 
@@ -256,7 +251,7 @@ DWORD WINAPI handleThread(LPVOID param) {
 		cout << "Not connect this remote server" << endl;
 		return FALSE;
 	}
-	cout << "Da ket noi duoc voi remote server nay" << endl;
+	cout << "Ket noi voi server: Da ket noi" << endl;
 
 	// gửi request giùm và nhận respond của remote server
 
